@@ -15,6 +15,11 @@ from io import BytesIO
 import io
 from monai.networks.nets import UNETR
 from skimage.transform import resize
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def preprocess_image(file):
     # Determine the file extension
@@ -144,13 +149,30 @@ def preprocess_images(zip_ref):
 
 
 def inference(input_tensor):
-    # Perform inference using the loaded model
-    model = load_model()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    input_tensor = input_tensor.to(device)  # Move input tensor to the correct device
-    with torch.no_grad():
-        output_tensor = model(input_tensor)  # Run inference
-    return output_tensor
+    try:
+        # Load the model
+        model = load_model()
+        logger.debug("Model loaded successfully")
+
+        # Determine the device
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        logger.debug("Using device: %s", device)
+
+        # Move the input tensor to the appropriate device
+        input_tensor = input_tensor.to(device)
+        logger.debug("Input tensor moved to device")
+        logger.debug("Input tensor shape: %s", input_tensor.shape)
+        # Run inference
+        model.eval()  # Set model to evaluation mode
+        with torch.no_grad():
+            output_tensor = model(input_tensor)
+            logger.debug("Inference completed")
+
+        return output_tensor
+
+    except Exception as e:
+        logger.exception("An error occurred during inference")
+        raise e  # Re-raise the exception after logging
 
 def visualize_results(image_tensor, output_tensor, filename="result_image.png"):
     # Convert tensors to NumPy arrays

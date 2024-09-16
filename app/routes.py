@@ -5,6 +5,11 @@ from .utils import preprocess_image, inference, visualize_results, preprocess_im
 from monai.transforms import Compose, Activations, AsDiscrete
 import io
 import torch
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 main = Blueprint('main', __name__)
 
@@ -17,23 +22,39 @@ def home():
 
 @main.route('/upload', methods=['POST'])
 def upload_file():
+    logger.debug("Received a POST request to /upload")
+    
     # Process the uploaded file and perform inference
     if 'file' not in request.files:
+        logger.error("No file uploaded")
         return "No file uploaded", 400
 
     file = request.files['file']
     if file.filename == '':
+        logger.error("No file selected")
         return "No file selected", 400
 
-    # Preprocess and run inference
-    input_tensor = preprocess_image(file)
-    output_tensor = inference(input_tensor)
+    logger.info("File received: %s", file.filename)
     
-    # Visualize and save results
-    image_filename = visualize_results(input_tensor, output_tensor)
+    # Preprocess and run inference
+    try:
+        input_tensor = preprocess_image(file)
+        logger.debug("Image preprocessing completed")
+        
+        output_tensor = inference(input_tensor)
+        logger.debug("Inference completed")
+        
+        # Visualize and save results
+        image_filename = visualize_results(input_tensor, output_tensor)
+        logger.info("Results visualized and saved as %s", image_filename)
+        
+    except Exception as e:
+        logger.exception("An error occurred during processing")
+        return "Internal server error", 500
 
     # Pass the filename to the template
     return render_template('result.html', result_image=image_filename)
+
 
 @main.route('/predict', methods=['POST'])
 def predict():
