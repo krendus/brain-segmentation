@@ -392,7 +392,7 @@ def load_model():
     model = UNETRWithPhysics(unetr_model, reaction_rate, diffusion_rate, time_step, device).to(device)
     # Load your trained model here
 # Safely loading the model state dict
-    model.load_state_dict(torch.load("model.pth", map_location=device, weights_only=True), strict=False)
+    model.load_state_dict(torch.load("model.pth", map_location=device, weights_only=False), strict=False)
 
     model.eval()  # Set the model to evaluation mode
     return model
